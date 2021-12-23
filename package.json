@@ -1,0 +1,17 @@
+{
+  "scripts": {
+    "prepare": "husky install",
+    "dependencies:update": "npx npm-check-updates -ui -x rehype-katex,remark-math --deep --dep prod,optional,dev,bundle,optional"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^15.0.0",
+    "@commitlint/config-conventional": "^15.0.0",
+    "cz-conventional-changelog": "^3.3.0",
+    "husky": "^7.0.4"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  }
+}

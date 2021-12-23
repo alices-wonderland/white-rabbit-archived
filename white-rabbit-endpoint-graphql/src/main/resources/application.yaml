@@ -1,0 +1,5 @@
+server:
+  port: 8443
+  ssl:
+    key-store-type: PKCS12
+    enabled: true

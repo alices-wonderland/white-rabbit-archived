@@ -1,0 +1,21 @@
+scalar DateTime
+scalar Long
+
+type Book {
+  id: ID!
+  version: Long!
+  name: String!
+  author: User!
+}
+
+type User {
+  id: ID!
+  version: Long!
+  name: String!
+  manager: User
+  books: [Book!]!
+}
+
+type Query {
+  user(id: ID!): User
+}
