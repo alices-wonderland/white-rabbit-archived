@@ -11,6 +11,7 @@ plugins {
 apply(plugin = "org.hibernate.orm")
 
 dependencies {
+  api("org.springframework.boot:spring-boot-starter-validation")
   api("org.springframework.boot:spring-boot-starter-data-jpa")
   api("com.querydsl:querydsl-jpa")
   runtimeOnly("org.postgresql:postgresql")

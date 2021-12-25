@@ -1,7 +1,11 @@
 package com.ukonnra.wonderland.whiterabbit.endpoint.graphql.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ukonnra.wonderland.whiterabbit.core.entity.Book;
+import com.ukonnra.wonderland.whiterabbit.core.entity.QBook;
 import com.ukonnra.wonderland.whiterabbit.core.entity.User;
+import com.ukonnra.wonderland.whiterabbit.core.query.Cursor;
 import com.ukonnra.wonderland.whiterabbit.core.service.BookService;
 import com.ukonnra.wonderland.whiterabbit.core.service.UserService;
 import java.util.ArrayList;
@@ -10,9 +14,11 @@ import java.util.List;
 import java.util.UUID;
 import javax.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Sort;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Controller;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -23,15 +29,17 @@ import reactor.core.publisher.Mono;
 public class GraphqlController {
   private final UserService userService;
   private final BookService bookService;
+  private final ObjectMapper mapper;
 
-  public GraphqlController(UserService userService, BookService bookService) {
+  public GraphqlController(UserService userService, BookService bookService, ObjectMapper mapper) {
     this.userService = userService;
     this.bookService = bookService;
+    this.mapper = mapper;
 
     Mono.fromCallable(
             () -> {
               List<Book> books = new ArrayList<>();
-              for (int i = 0; i < 2; i++) {
+              for (int i = 0; i < 10; i++) {
                 var book = new Book();
                 book.setName("book " + i);
                 books.add(book);
@@ -72,11 +80,52 @@ public class GraphqlController {
     return Mono.justOrEmpty(user.getManager());
   }
 
+  private record OrderDTO(String property, Sort.Direction direction) {}
+
+  private Cursor.Pagination createPaginationWithSize(
+      final Cursor after, final Cursor before, int size, boolean isAfter) {
+    Cursor.Pagination pagination;
+    if (after != null && before != null) {
+      pagination = new Cursor.Pagination.Bidirectional(after, before, size, isAfter);
+    } else if (after != null && isAfter) {
+      pagination = new Cursor.Pagination.Unidirectional(after, true, size);
+    } else if (before != null && !isAfter) {
+      pagination = new Cursor.Pagination.Unidirectional(before, false, size);
+    } else {
+      pagination = new Cursor.Pagination.Unidirectional(null, isAfter, size);
+    }
+    return pagination;
+  }
+
   @SchemaMapping(typeName = "User")
-  public Flux<Book> books(final User user) {
-    log.info("Start get books for User[{}]", user.getId());
+  public Flux<Book> books(
+      final User user,
+      @Argument @Nullable Integer first,
+      @Argument @Nullable String after,
+      @Argument @Nullable Integer last,
+      @Argument @Nullable String before,
+      @Argument String filter,
+      @Argument List<OrderDTO> sort)
+      throws JsonProcessingException {
+    var afterCursor = after == null ? null : this.mapper.readValue(after, Cursor.class);
+    var beforeCursor = before == null ? null : this.mapper.readValue(before, Cursor.class);
+
+    Cursor.Pagination pagination;
+    if (first != null && last != null) {
+      throw new RuntimeException("`first` and `last` cannot show in the same time");
+    } else if (first != null) {
+      pagination = createPaginationWithSize(afterCursor, beforeCursor, first, true);
+    } else if (last != null) {
+      pagination = createPaginationWithSize(afterCursor, beforeCursor, last, false);
+    } else {
+      pagination = createPaginationWithSize(afterCursor, beforeCursor, 2, true);
+    }
+
     return this.bookService
-        .findAllByAuthor(user)
+        .findAll(
+            QBook.book.name.startsWith("book"),
+            Sort.by(sort.stream().map(o -> new Sort.Order(o.direction, o.property)).toList()),
+            pagination)
         .doOnNext(
             b ->
                 log.info(

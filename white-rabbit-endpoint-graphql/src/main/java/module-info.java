@@ -4,4 +4,6 @@ open module whiterabbit.endpoint.graphql {
   requires spring.context;
   requires spring.graphql;
   requires lombok;
+  requires com.fasterxml.jackson.core;
+  requires com.fasterxml.jackson.databind;
 }

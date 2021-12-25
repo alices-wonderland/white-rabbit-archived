@@ -1,13 +1,19 @@
 package com.ukonnra.wonderland.whiterabbit.core;
 
 import com.ukonnra.wonderland.whiterabbit.core.entity.Book;
+import com.ukonnra.wonderland.whiterabbit.core.entity.QUser;
 import com.ukonnra.wonderland.whiterabbit.core.entity.User;
+import com.ukonnra.wonderland.whiterabbit.core.query.Cursor;
 import com.ukonnra.wonderland.whiterabbit.core.repository.BookRepository;
 import com.ukonnra.wonderland.whiterabbit.core.repository.UserRepository;
+import com.ukonnra.wonderland.whiterabbit.core.service.BookService;
+import com.ukonnra.wonderland.whiterabbit.core.service.UserService;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.IntStream;
 import javax.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.Assertions;
@@ -18,6 +24,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.TestComponent;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -38,6 +45,9 @@ class CoreTest {
   private final BookRepository bookRepository;
   private final UserRepository userRepository;
 
+  private final BookService bookService;
+  private final UserService userService;
+
   @Container
   private static final PostgreSQLContainer postgreSQLContainer =
       new PostgreSQLContainer("postgres:14-alpine");
@@ -52,9 +62,15 @@ class CoreTest {
   }
 
   @Autowired
-  public CoreTest(BookRepository bookRepository, UserRepository userRepository) {
+  public CoreTest(
+      BookRepository bookRepository,
+      UserRepository userRepository,
+      BookService bookService,
+      UserService userService) {
     this.bookRepository = bookRepository;
     this.userRepository = userRepository;
+    this.bookService = bookService;
+    this.userService = userService;
   }
 
   @Test
@@ -118,5 +134,109 @@ class CoreTest {
     Assertions.assertThat(this.bookRepository.existsById(books.get(1).getId())).isTrue();
     Assertions.assertThat(this.bookRepository.existsById(books.get(0).getId())).isFalse();
     Assertions.assertThat(manager.getBooks()).hasSize(1);
+  }
+
+  @Test
+  void testSuccessPaginationQuery() {
+    var users =
+        IntStream.range(0, 5)
+            .mapToObj(
+                i -> {
+                  var user = new User();
+                  user.setName("User " + i);
+                  user.setVersion((long) i);
+                  return user;
+                })
+            .toList();
+    this.userRepository.saveAllAndFlush(users);
+
+    var targetUser = users.get(2);
+
+    Assertions.assertThat(targetUser.getId()).isNotNull();
+
+    var resultQueryBefore =
+        this.userService
+            .findAll(
+                QUser.user.name.startsWith("User"),
+                Sort.by("name"),
+                new Cursor.Pagination.Unidirectional(
+                    new Cursor(targetUser.getId(), Map.of("name", targetUser.getName())), false, 3))
+            .collectList()
+            .block();
+    Assertions.assertThat(resultQueryBefore).isEqualTo(users.subList(0, 2));
+
+    var resultQueryAfter =
+        this.userService
+            .findAll(
+                QUser.user.name.startsWith("User"),
+                Sort.by("name"),
+                new Cursor.Pagination.Unidirectional(
+                    new Cursor(targetUser.getId(), Map.of("name", targetUser.getName())), true, 3))
+            .collectList()
+            .block();
+    Assertions.assertThat(resultQueryAfter).isEqualTo(users.subList(3, 5));
+
+    var resultQueryHead =
+        this.userService
+            .findAll(
+                QUser.user.name.startsWith("User"),
+                Sort.by("name"),
+                new Cursor.Pagination.Unidirectional(null, true, 3))
+            .collectList()
+            .block();
+    Assertions.assertThat(resultQueryHead).isEqualTo(users.subList(0, 3));
+
+    var resultQueryTail =
+        this.userService
+            .findAll(
+                QUser.user.name.startsWith("User"),
+                Sort.by("name"),
+                new Cursor.Pagination.Unidirectional(null, false, 3))
+            .collectList()
+            .block();
+    Assertions.assertThat(resultQueryTail).isEqualTo(users.subList(2, 5));
+
+    var resultQueryBetween =
+        this.userService
+            .findAll(
+                QUser.user.name.startsWith("User"),
+                Sort.by("name"),
+                new Cursor.Pagination.Bidirectional(
+                    new Cursor(users.get(0).getId(), Map.of("name", users.get(0).getName())),
+                    new Cursor(users.get(4).getId(), Map.of("name", users.get(4).getName())),
+                    2,
+                    true))
+            .collectList()
+            .block();
+    Assertions.assertThat(resultQueryBetween).isEqualTo(users.subList(1, 3));
+
+    var resultQueryBetweenBefore =
+        this.userService
+            .findAll(
+                QUser.user.name.startsWith("User"),
+                Sort.by("name"),
+                new Cursor.Pagination.Bidirectional(
+                    new Cursor(users.get(0).getId(), Map.of("name", users.get(0).getName())),
+                    new Cursor(users.get(4).getId(), Map.of("name", users.get(4).getName())),
+                    2,
+                    false))
+            .collectList()
+            .block();
+    Assertions.assertThat(resultQueryBetweenBefore).isEqualTo(users.subList(2, 4));
+
+    var resultQueryBetweenReversed =
+        this.userService
+            .findAll(
+                QUser.user.name.startsWith("User"),
+                Sort.by(Sort.Direction.DESC, "name"),
+                new Cursor.Pagination.Bidirectional(
+                    new Cursor(users.get(4).getId(), Map.of("name", users.get(4).getName())),
+                    new Cursor(users.get(0).getId(), Map.of("name", users.get(0).getName())),
+                    2,
+                    true))
+            .collectList()
+            .block();
+    Assertions.assertThat(resultQueryBetweenReversed)
+        .isEqualTo(List.of(users.get(3), users.get(2)));
   }
 }
