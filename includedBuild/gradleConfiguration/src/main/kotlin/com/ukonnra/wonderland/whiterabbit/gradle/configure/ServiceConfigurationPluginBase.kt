@@ -4,11 +4,17 @@ import io.freefair.gradle.plugins.lombok.LombokPlugin
 import io.spring.gradle.dependencymanagement.DependencyManagementPlugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.plugins.JavaPlugin
+import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.apply
+import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.exclude
 import org.gradle.kotlin.dsl.getByName
 import org.gradle.kotlin.dsl.named
+import org.javamodularity.moduleplugin.extensions.CompileTestModuleOptions
+import org.javamodularity.moduleplugin.extensions.TestModuleOptions
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 abstract class ServiceConfigurationPluginBase : ConfigurationPluginBase() {
@@ -30,6 +36,22 @@ abstract class ServiceConfigurationPluginBase : ConfigurationPluginBase() {
 
       named<Configuration>("implementation") {
         exclude(module = "spring-boot-starter-tomcat")
+        exclude(group = "javax.servlet")
+        exclude(module = "jsr305")
+      }
+    }
+
+    target.tasks.apply {
+      named<Test>(JavaPlugin.TEST_TASK_NAME) {
+        extensions.configure<TestModuleOptions> {
+          runOnClasspath = true
+        }
+      }
+
+      named<JavaCompile>(JavaPlugin.COMPILE_TEST_JAVA_TASK_NAME) {
+        extensions.configure<CompileTestModuleOptions> {
+          isCompileOnClasspath = true
+        }
       }
     }
 
