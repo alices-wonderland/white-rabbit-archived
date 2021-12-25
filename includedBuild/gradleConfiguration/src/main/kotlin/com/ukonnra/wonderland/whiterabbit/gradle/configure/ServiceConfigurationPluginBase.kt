@@ -37,6 +37,9 @@ abstract class ServiceConfigurationPluginBase : ConfigurationPluginBase() {
       "implementation"(platform("org.testcontainers:testcontainers-bom:1.16.2"))
       "implementation"(platform(SpringBootPlugin.BOM_COORDINATES))
 
+      "implementation"("org.springframework.experimental:spring-native:0.11.1")
+      "implementation"("org.springframework.experimental:spring-aot:0.11.1")
+
       "testImplementation"("org.springframework.boot:spring-boot-starter-test")
       "testImplementation"("io.projectreactor:reactor-test")
       "testImplementation"("org.testcontainers:junit-jupiter")
