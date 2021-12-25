@@ -1,7 +1,10 @@
 package com.ukonnra.wonderland.whiterabbit.gradle.configure
 
+import com.palantir.gradle.docker.DockerExtension
+import com.palantir.gradle.docker.PalantirDockerPlugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.apply
+import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.named
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
@@ -10,6 +13,7 @@ import org.springframework.boot.gradle.tasks.bundling.BootBuildImage
 class ApplicationConfigurationPlugin : ServiceConfigurationPluginBase() {
   override fun doApply(target: Project) {
     target.apply<SpringBootPlugin>()
+    target.apply<PalantirDockerPlugin>()
 //    target.apply<SpringAotGradlePlugin>()
 
     target.tasks.named<BootBuildImage>("bootBuildImage") {
@@ -33,6 +37,15 @@ class ApplicationConfigurationPlugin : ServiceConfigurationPluginBase() {
           "HTTPS_PROXY" to proxyUrl
         )
       }
+    }
+
+    target.configure<DockerExtension> {
+      val imageTag = System.getenv("IMAGE_TAG") ?: "latest"
+      name = "ukonnra/${target.name}:$imageTag"
+      setDockerfile(target.file("Dockerfile"))
+      files("${target.project.projectDir}/build/libs")
+      pull(true)
+      noCache(true)
     }
 
     target.dependencies {
