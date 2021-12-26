@@ -14,21 +14,10 @@ class ApplicationConfigurationPlugin : ServiceConfigurationPluginBase() {
   override fun doApply(target: Project) {
     target.apply<SpringBootPlugin>()
     target.apply<PalantirDockerPlugin>()
-//    target.apply<SpringAotGradlePlugin>()
 
     target.tasks.named<BootBuildImage>("bootBuildImage") {
       val imageTag = System.getenv("IMAGE_TAG") ?: "latest"
       imageName = "ukonnra/${target.name}:$imageTag"
-
-//      builder = "paketobuildpacks/builder:tiny"
-//      environment = mapOf(
-//        "BP_NATIVE_IMAGE" to "true",
-//        "BP_NATIVE_IMAGE_BUILD_ARGUMENTS" to """
-//          --enable-https
-//          --initialize-at-run-time=io.netty.handler.ssl.BouncyCastleAlpnSslUtils
-//          -H:+ReportExceptionStackTraces
-//        """.trimIndent()
-//      )
 
       val proxyUrl = System.getenv("BUILD_IMAGE_PROXY")
       if (!proxyUrl.isNullOrEmpty()) {

@@ -1,4 +1,27 @@
-FROM eclipse-temurin:17-jre-alpine
+# Cannot use `jdeps --print-module-deps` directly due to
+# https://stackoverflow.com/questions/69943899/jdeps-cant-print-module-deps-due-to-a-multireleaseexception
+# The latest jdk-18 fixed the issue
+FROM openjdk:18 AS jdepsExtractor
+
+COPY white-rabbit-endpoint-graphql.jar app.jar
+
+RUN jar xvf app.jar
+
+RUN jdeps -cp 'BOOT-INF/lib/*' -recursive --multi-release 17 --ignore-missing-deps -q --print-module-deps app.jar > jdeps.info
+
+# Due to the missing SSL related dependency, no idea why it is not in the jdeps
+# https://stackoverflow.com/questions/55439599/sslhandshakeexception-with-jlink-created-runtime/55517159#comment97595874_55439599
+# Article Related: https://mbien.dev/blog/entry/custom-java-runtimes-with-jlink
+RUN echo "$(cat jdeps.info),jdk.crypto.ec" > jdeps.info
+
+FROM openjdk:17-alpine AS builder
+
+COPY --from=jdepsExtractor jdeps.info jdeps.info
+
+RUN jlink --verbose --compress 2 --strip-java-debug-attributes --no-header-files --no-man-pages --output jre \
+    --add-modules $(cat jdeps.info)
+
+FROM alpine:latest
 
 ARG USER=whiterabbit
 
@@ -18,6 +41,8 @@ USER $USER
 
 WORKDIR $HOME
 
-COPY --chown=$USER:$GROUP white-rabbit-endpoint-graphql.jar app.jar
+COPY --from=builder --chown=$USER:$GROUP jre jre
 
-ENTRYPOINT [ "java", "-jar", "app.jar" ]
+COPY --from=jdepsExtractor --chown=$USER:$GROUP app.jar app.jar
+
+ENTRYPOINT [ "jre/bin/java", "-jar", "app.jar" ]

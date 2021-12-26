@@ -24,7 +24,7 @@ jobs:
           java-version: '17'
 
       - name: Lint & Test
-        run: ./gradlew clean check
+        run: ./gradlew clean check :gradleConfiguration:check
 
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v1
@@ -35,7 +35,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew sonarqube --info
+        run: ./gradlew sonarqube
 
   parse-tag:
     name: Build Docker Image

@@ -32,7 +32,6 @@ import org.gradle.kotlin.dsl.withType
 import org.gradle.plugins.ide.idea.IdeaPlugin
 import org.gradle.testing.jacoco.plugins.JacocoPlugin
 import org.gradle.testing.jacoco.plugins.JacocoPluginExtension
-import org.javamodularity.moduleplugin.ModuleSystemPlugin
 import org.sonarqube.gradle.SonarQubeExtension
 import org.sonarqube.gradle.SonarQubePlugin
 import org.sonarqube.gradle.SonarQubeProperties
@@ -51,7 +50,6 @@ abstract class ConfigurationPluginBase : Plugin<Project> {
     target.apply<SpotlessPlugin>()
     target.apply<CheckstylePlugin>()
     target.apply<SpotBugsPlugin>()
-    target.apply<ModuleSystemPlugin>()
     target.apply<SonarQubePlugin>()
 
     target.group = "com.ukonnra.wonderland"

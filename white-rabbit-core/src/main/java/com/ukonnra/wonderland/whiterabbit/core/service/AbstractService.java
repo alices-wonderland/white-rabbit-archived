@@ -7,6 +7,7 @@ import com.ukonnra.wonderland.whiterabbit.core.query.Cursor;
 import com.ukonnra.wonderland.whiterabbit.core.repository.AbstractRepository;
 import java.util.LinkedList;
 import java.util.UUID;
+import java.util.function.Function;
 import org.springframework.data.domain.Sort;
 import org.springframework.lang.Nullable;
 import reactor.core.publisher.Flux;
@@ -23,14 +24,29 @@ public abstract class AbstractService<T extends AbstractEntity, R extends Abstra
   abstract BooleanExpression comparableFieldHandler(
       String name, @Nullable Boolean isAfter, Object value);
 
+  protected static <T extends Comparable<T>> BooleanExpression doCompare(
+      @Nullable Boolean isAfter,
+      Function<T, BooleanExpression> left,
+      Function<T, BooleanExpression> right,
+      Function<T, BooleanExpression> eq,
+      T value) {
+    if (isAfter == null) {
+      return eq.apply(value);
+    } else if (isAfter) {
+      return left.apply(value);
+    } else {
+      return right.apply(value);
+    }
+  }
+
   public Mono<T> save(T entity) {
     return Mono.fromCallable(() -> this.repository.save(entity))
-        .publishOn(Schedulers.boundedElastic());
+        .subscribeOn(Schedulers.boundedElastic());
   }
 
   public Mono<T> findById(UUID id) {
     return Mono.fromCallable(() -> this.repository.findById(id))
-        .publishOn(Schedulers.boundedElastic())
+        .subscribeOn(Schedulers.boundedElastic())
         .flatMap(Mono::justOrEmpty);
   }
 
@@ -42,7 +58,7 @@ public abstract class AbstractService<T extends AbstractEntity, R extends Abstra
                 this.repository.findAll(
                     query.getKey().equals(Expressions.TRUE) ? filter : filter.and(query.getKey()),
                     query.getValue()))
-        .publishOn(Schedulers.boundedElastic())
+        .subscribeOn(Schedulers.boundedElastic())
         .map(
             items -> {
               var reordered = new LinkedList<T>();
