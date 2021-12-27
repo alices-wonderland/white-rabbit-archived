@@ -13,7 +13,24 @@ type User {
   version: Long!
   name: String!
   manager: User
-  books(first: Int, after: String, last: Int, before: String, filter: String!, sort: [Order!]!): [Book!]!
+  books(first: Int, after: String, last: Int, before: String, filter: String!, sort: [Order!]!): BookConnection!
+}
+
+type PageInfo {
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+  firstCursor: String
+  lastCursor: String
+}
+
+type BookNode {
+  cursor: String!
+  item: Book!
+}
+
+type BookConnection {
+  pageInfo: PageInfo!
+  items: [BookNode!]!
 }
 
 input Order {

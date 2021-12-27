@@ -1,17 +1,16 @@
 package com.ukonnra.wonderland.whiterabbit.core;
 
-import com.ukonnra.wonderland.whiterabbit.core.entity.AbstractEntity;
 import com.ukonnra.wonderland.whiterabbit.core.entity.Book;
 import com.ukonnra.wonderland.whiterabbit.core.entity.QUser;
 import com.ukonnra.wonderland.whiterabbit.core.entity.User;
+import com.ukonnra.wonderland.whiterabbit.core.query.Cursor;
+import com.ukonnra.wonderland.whiterabbit.core.query.CursorPage;
 import com.ukonnra.wonderland.whiterabbit.core.query.Pagination;
 import com.ukonnra.wonderland.whiterabbit.core.repository.BookRepository;
 import com.ukonnra.wonderland.whiterabbit.core.repository.UserRepository;
 import com.ukonnra.wonderland.whiterabbit.core.service.BookService;
 import com.ukonnra.wonderland.whiterabbit.core.service.UserService;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -41,8 +40,6 @@ class CoreTest {
   @Import({CoreConfiguration.class})
   static class Configuration {}
 
-  private static final Base64.Encoder ENCODER = Base64.getUrlEncoder();
-
   private final BookRepository bookRepository;
   private final UserRepository userRepository;
 
@@ -70,11 +67,6 @@ class CoreTest {
     this.userRepository = userRepository;
     this.bookService = bookService;
     this.userService = userService;
-  }
-
-  private static <T extends AbstractEntity> String createCursor(final T entity) {
-    return ENCODER.encodeToString(
-        Objects.requireNonNull(entity.getId()).toString().getBytes(StandardCharsets.UTF_8));
   }
 
   @Test
@@ -158,78 +150,139 @@ class CoreTest {
 
     Assertions.assertThat(targetUser.getId()).isNotNull();
 
-    var resultQueryBefore =
-        this.userService
-            .findAll(
-                QUser.user.name.startsWith("User"),
-                Sort.by("name"),
-                new Pagination.Unidirectional(createCursor(targetUser), false, 3))
-            .collectList()
-            .block();
-    Assertions.assertThat(resultQueryBefore).isEqualTo(users.subList(0, 2));
+    {
+      var pageBefore =
+          this.userService
+              .findAll(
+                  QUser.user.name.startsWith("User"),
+                  Sort.by("name"),
+                  new Pagination(null, Cursor.of(targetUser), 3, false))
+              .block();
+      Assertions.assertThat(pageBefore)
+          .isNotNull()
+          .extracting(CursorPage::getItemContents)
+          .isEqualTo(users.subList(0, 2));
+      Assertions.assertThat(pageBefore.getPageInfo())
+          .isEqualTo(
+              new CursorPage.PageInfo(
+                  false, true, Cursor.of(users.get(0)), Cursor.of(users.get(1))));
+    }
 
-    var resultQueryAfter =
-        this.userService
-            .findAll(
-                QUser.user.name.startsWith("User"),
-                Sort.by("name"),
-                new Pagination.Unidirectional(createCursor(targetUser), true, 3))
-            .collectList()
-            .block();
-    Assertions.assertThat(resultQueryAfter).isEqualTo(users.subList(3, 5));
+    {
+      var pageAfter =
+          this.userService
+              .findAll(
+                  QUser.user.name.startsWith("User"),
+                  Sort.by("name"),
+                  new Pagination(Cursor.of(targetUser), null, 3, true))
+              .block();
+      Assertions.assertThat(pageAfter)
+          .isNotNull()
+          .extracting(CursorPage::getItemContents)
+          .isEqualTo(users.subList(3, 5));
+      Assertions.assertThat(pageAfter.getPageInfo())
+          .isEqualTo(
+              new CursorPage.PageInfo(
+                  true, false, Cursor.of(users.get(3)), Cursor.of(users.get(4))));
+    }
 
-    var resultQueryHead =
-        this.userService
-            .findAll(
-                QUser.user.name.startsWith("User"),
-                Sort.by("name"),
-                new Pagination.Unidirectional(null, true, 3))
-            .collectList()
-            .block();
-    Assertions.assertThat(resultQueryHead).isEqualTo(users.subList(0, 3));
-
-    var resultQueryTail =
-        this.userService
-            .findAll(
-                QUser.user.name.startsWith("User"),
-                Sort.by("name"),
-                new Pagination.Unidirectional(null, false, 3))
-            .collectList()
-            .block();
-    Assertions.assertThat(resultQueryTail).isEqualTo(users.subList(2, 5));
-
-    var resultQueryBetween =
-        this.userService
-            .findAll(
-                QUser.user.name.startsWith("User"),
-                Sort.by("name"),
-                new Pagination.Bidirectional(
-                    createCursor(users.get(0)), createCursor(users.get(4)), 2, true))
-            .collectList()
-            .block();
-    Assertions.assertThat(resultQueryBetween).isEqualTo(users.subList(1, 3));
-
-    var resultQueryBetweenBefore =
-        this.userService
-            .findAll(
-                QUser.user.name.startsWith("User"),
-                Sort.by("name"),
-                new Pagination.Bidirectional(
-                    createCursor(users.get(0)), createCursor(users.get(4)), 2, false))
-            .collectList()
-            .block();
-    Assertions.assertThat(resultQueryBetweenBefore).isEqualTo(users.subList(2, 4));
-
-    var resultQueryBetweenReversed =
-        this.userService
-            .findAll(
-                QUser.user.name.startsWith("User"),
-                Sort.by(Sort.Direction.DESC, "name"),
-                new Pagination.Bidirectional(
-                    createCursor(users.get(4)), createCursor(users.get(0)), 2, true))
-            .collectList()
-            .block();
-    Assertions.assertThat(resultQueryBetweenReversed)
-        .isEqualTo(List.of(users.get(3), users.get(2)));
+    {
+      var pageHead =
+          this.userService
+              .findAll(
+                  QUser.user.name.startsWith("User"),
+                  Sort.by("name"),
+                  new Pagination(null, null, 3, true))
+              .block();
+      Assertions.assertThat(pageHead)
+          .isNotNull()
+          .extracting(CursorPage::getItemContents)
+          .isEqualTo(users.subList(0, 3));
+      Assertions.assertThat(pageHead.getPageInfo())
+          .isEqualTo(
+              new CursorPage.PageInfo(
+                  false, true, Cursor.of(users.get(0)), Cursor.of(users.get(2))));
+    }
+    {
+      var pageTail =
+          this.userService
+              .findAll(
+                  QUser.user.name.startsWith("User"),
+                  Sort.by("name"),
+                  new Pagination(null, null, 3, false))
+              .block();
+      Assertions.assertThat(pageTail)
+          .isNotNull()
+          .extracting(CursorPage::getItemContents)
+          .isEqualTo(users.subList(2, 5));
+      Assertions.assertThat(pageTail.getPageInfo())
+          .isEqualTo(
+              new CursorPage.PageInfo(
+                  true, false, Cursor.of(users.get(2)), Cursor.of(users.get(4))));
+    }
+    {
+      var pageBetween =
+          this.userService
+              .findAll(
+                  QUser.user.name.startsWith("User"),
+                  Sort.by("name"),
+                  new Pagination(Cursor.of(users.get(0)), Cursor.of(users.get(4)), 2, true))
+              .block();
+      Assertions.assertThat(pageBetween)
+          .isNotNull()
+          .extracting(CursorPage::getItemContents)
+          .isEqualTo(users.subList(1, 3));
+      Assertions.assertThat(pageBetween.getPageInfo())
+          .isEqualTo(
+              new CursorPage.PageInfo(
+                  true, true, Cursor.of(users.get(1)), Cursor.of(users.get(2))));
+    }
+    {
+      var pageBetweenBefore =
+          this.userService
+              .findAll(
+                  QUser.user.name.startsWith("User"),
+                  Sort.by("name"),
+                  new Pagination(Cursor.of(users.get(0)), Cursor.of(users.get(4)), 2, false))
+              .block();
+      Assertions.assertThat(pageBetweenBefore)
+          .isNotNull()
+          .extracting(CursorPage::getItemContents)
+          .isEqualTo(users.subList(2, 4));
+      Assertions.assertThat(pageBetweenBefore.getPageInfo())
+          .isEqualTo(
+              new CursorPage.PageInfo(
+                  true, true, Cursor.of(users.get(2)), Cursor.of(users.get(3))));
+    }
+    {
+      var pageBetweenReversed =
+          this.userService
+              .findAll(
+                  QUser.user.name.startsWith("User"),
+                  Sort.by(Sort.Direction.DESC, "name"),
+                  new Pagination(Cursor.of(users.get(4)), Cursor.of(users.get(0)), 2, true))
+              .block();
+      Assertions.assertThat(pageBetweenReversed)
+          .isNotNull()
+          .extracting(CursorPage::getItemContents)
+          .isEqualTo(List.of(users.get(3), users.get(2)));
+      Assertions.assertThat(pageBetweenReversed.getPageInfo())
+          .isEqualTo(
+              new CursorPage.PageInfo(
+                  true, true, Cursor.of(users.get(3)), Cursor.of(users.get(2))));
+    }
+    {
+      var pageEmpty =
+          this.userService
+              .findAll(
+                  QUser.user.name.startsWith("User"),
+                  Sort.by(Sort.Direction.DESC, "name"),
+                  new Pagination(Cursor.of(users.get(0)), Cursor.of(users.get(4)), 2, true))
+              .block();
+      Assertions.assertThat(pageEmpty).isNotNull();
+      Assertions.assertThat(pageEmpty.getItemContents()).isEmpty();
+      Assertions.assertThat(pageEmpty.getPageInfo())
+          .isEqualTo(new CursorPage.PageInfo(false, false, null, null));
+    }
   }
 }

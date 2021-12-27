@@ -3,6 +3,7 @@ package com.ukonnra.wonderland.whiterabbit.endpoint.graphql.controller;
 import com.ukonnra.wonderland.whiterabbit.core.entity.Book;
 import com.ukonnra.wonderland.whiterabbit.core.entity.QBook;
 import com.ukonnra.wonderland.whiterabbit.core.entity.User;
+import com.ukonnra.wonderland.whiterabbit.core.query.CursorPage;
 import com.ukonnra.wonderland.whiterabbit.core.query.Pagination;
 import com.ukonnra.wonderland.whiterabbit.core.service.BookService;
 import com.ukonnra.wonderland.whiterabbit.core.service.UserService;
@@ -19,7 +20,6 @@ import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Controller;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Controller
@@ -81,21 +81,11 @@ public class GraphqlController {
 
   private Pagination createPaginationWithSize(
       final String after, final String before, int size, boolean isAfter) {
-    Pagination pagination;
-    if (after != null && before != null) {
-      pagination = new Pagination.Bidirectional(after, before, size, isAfter);
-    } else if (after != null && isAfter) {
-      pagination = new Pagination.Unidirectional(after, true, size);
-    } else if (before != null && !isAfter) {
-      pagination = new Pagination.Unidirectional(before, false, size);
-    } else {
-      pagination = new Pagination.Unidirectional(null, isAfter, size);
-    }
-    return pagination;
+    return new Pagination(after, before, size, isAfter);
   }
 
   @SchemaMapping(typeName = "User")
-  public Flux<Book> books(
+  public Mono<CursorPage<Book>> books(
       final User user,
       @Argument @Nullable Integer first,
       @Argument @Nullable String after,
@@ -114,19 +104,10 @@ public class GraphqlController {
       pagination = createPaginationWithSize(after, before, 2, true);
     }
 
-    return this.bookService
-        .findAll(
-            QBook.book.name.startsWith("book"),
-            Sort.by(sort.stream().map(o -> new Sort.Order(o.direction, o.property)).toList()),
-            pagination)
-        .doOnNext(
-            b ->
-                log.info(
-                    "Book[{}, name={}] get by User[{}, name={}]",
-                    b.getId(),
-                    b.getName(),
-                    user.getId(),
-                    user.getName()));
+    return this.bookService.findAll(
+        QBook.book.name.startsWith("book"),
+        Sort.by(sort.stream().map(o -> new Sort.Order(o.direction, o.property)).toList()),
+        pagination);
   }
 
   @SchemaMapping(typeName = "Book")

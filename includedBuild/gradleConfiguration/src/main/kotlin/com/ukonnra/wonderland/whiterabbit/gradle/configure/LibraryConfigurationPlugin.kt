@@ -25,7 +25,6 @@ open class LibraryConfigurationPlugin : ServiceConfigurationPluginBase() {
     target.apply<JavaLibraryPlugin>()
 
     target.configure<JavaPluginExtension> {
-      withJavadocJar()
       withSourcesJar()
     }
 

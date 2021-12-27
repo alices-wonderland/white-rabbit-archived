@@ -4,14 +4,14 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.ComparableExpression;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.ukonnra.wonderland.whiterabbit.core.entity.AbstractEntity;
+import com.ukonnra.wonderland.whiterabbit.core.query.CursorPage;
 import com.ukonnra.wonderland.whiterabbit.core.query.Pagination;
 import com.ukonnra.wonderland.whiterabbit.core.repository.AbstractRepository;
-import java.util.LinkedList;
 import java.util.UUID;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -76,8 +76,8 @@ public abstract class AbstractService<T extends AbstractEntity, R extends Abstra
    *                     <li><strong>Filter IN</strong> the entities <strong>matching</strong> the
    *                         sort direction
    *                   </ul>
-   *               <li>Otherwise, <strong>revert</strong> the sort order, then filter matching the
-   *                   sort direction
+   *               <li>Else, <strong>revert</strong> the sort order, then filter matching the sort
+   *                   direction
    *             </ul>
    *         <li>If bidirectional:
    *             <ul>
@@ -95,7 +95,7 @@ public abstract class AbstractService<T extends AbstractEntity, R extends Abstra
    * @param pagination The cursor-based pagination info
    * @return Entities pagination result
    */
-  public Flux<T> findAll(
+  public Mono<CursorPage<T>> findAll(
       final BooleanExpression filter, final Sort sort, final Pagination pagination) {
     var paginationFilter = pagination.createFilter(this::createPaginationItemFilterByField, sort);
     var paginationSort = pagination.createSort(sort);
@@ -103,25 +103,8 @@ public abstract class AbstractService<T extends AbstractEntity, R extends Abstra
             () ->
                 this.repository.findAll(
                     paginationFilter == null ? filter : filter.and(paginationFilter),
-                    paginationSort))
+                    PageRequest.ofSize(pagination.size() + 1).withSort(paginationSort)))
         .subscribeOn(Schedulers.boundedElastic())
-        .map(
-            items -> {
-              var reordered = new LinkedList<T>();
-              var shouldBeReversed = !pagination.isAfter();
-              for (var item : items) {
-                if (shouldBeReversed) {
-                  reordered.addFirst(item);
-                } else {
-                  reordered.addLast(item);
-                }
-
-                if (pagination.size() != null && reordered.size() >= pagination.size()) {
-                  break;
-                }
-              }
-              return reordered;
-            })
-        .flatMapMany(Flux::fromIterable);
+        .map(entities -> CursorPage.of(entities.getContent(), pagination));
   }
 }

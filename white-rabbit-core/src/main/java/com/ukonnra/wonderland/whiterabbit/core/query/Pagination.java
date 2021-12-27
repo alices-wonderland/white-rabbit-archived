@@ -2,36 +2,19 @@ package com.ukonnra.wonderland.whiterabbit.core.query;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.UUID;
 import javax.validation.constraints.Positive;
 import org.springframework.data.domain.Sort;
 import org.springframework.lang.Nullable;
 
-public sealed interface Pagination permits Pagination.Bidirectional, Pagination.Unidirectional {
-  @Positive
-  Integer size();
-
-  boolean isAfter();
-
-  /**
-   * Extract ID from Cursor, right now Cursor is <code>base64(id)</code>
-   *
-   * @param cursor The bast64 cursor string
-   * @return Entity ID
-   */
-  private static UUID extractIdFromCursor(final String cursor) {
-    return UUID.fromString(
-        new String(Base64.getUrlDecoder().decode(cursor), StandardCharsets.UTF_8));
-  }
-
+public record Pagination(
+    @Nullable String after, @Nullable String before, @Positive int size, boolean isAfter) {
   private static BooleanExpression createPaginationFilter(
       final String cursor,
       final ComparableFieldHandler handler,
       final Sort.Order order,
       @Nullable Boolean isAfter) {
-    var id = extractIdFromCursor(cursor);
+    var id = Cursor.extractId(cursor);
     if (isAfter == null) {
       return handler.handle(id, order.getProperty(), null);
     } else {
@@ -42,9 +25,9 @@ public sealed interface Pagination permits Pagination.Bidirectional, Pagination.
     }
   }
 
-  static BooleanExpression createPaginationFilter(
+  private static BooleanExpression createPaginationFilter(
       final String cursor, final ComparableFieldHandler handler, final Sort sort, boolean isAfter) {
-    var id = extractIdFromCursor(cursor);
+    var id = Cursor.extractId(cursor);
 
     var whenNotMatching =
         Expressions.allOf(
@@ -60,7 +43,7 @@ public sealed interface Pagination permits Pagination.Bidirectional, Pagination.
     return whenMatching.or(whenNotMatching);
   }
 
-  default Sort createSort(final Sort sort) {
+  public Sort createSort(final Sort sort) {
     var orders =
         sort.stream()
             .map(
@@ -76,29 +59,17 @@ public sealed interface Pagination permits Pagination.Bidirectional, Pagination.
   }
 
   @FunctionalInterface
-  interface ComparableFieldHandler {
+  public interface ComparableFieldHandler {
     BooleanExpression handle(UUID id, String field, @Nullable Boolean isAfter);
   }
 
-  BooleanExpression createFilter(final ComparableFieldHandler handler, final Sort sort);
-
-  record Unidirectional(@Nullable String cursor, boolean isAfter, @Positive Integer size)
-      implements Pagination {
-
-    @Override
-    public @Nullable BooleanExpression createFilter(ComparableFieldHandler handler, Sort sort) {
-      return cursor == null ? null : createPaginationFilter(cursor, handler, sort, isAfter);
-    }
-  }
-
-  record Bidirectional(
-      String after, String before, @Nullable @Positive Integer size, boolean isAfter)
-      implements Pagination {
-    @Override
-    public BooleanExpression createFilter(ComparableFieldHandler handler, Sort sort) {
-      return Expressions.allOf(
-          createPaginationFilter(after, handler, sort, true),
-          createPaginationFilter(before, handler, sort, false));
+  public BooleanExpression createFilter(ComparableFieldHandler handler, Sort sort) {
+    var afterFilter = after == null ? null : createPaginationFilter(after, handler, sort, true);
+    var beforeFilter = before == null ? null : createPaginationFilter(before, handler, sort, false);
+    if (afterFilter != null && beforeFilter != null) {
+      return afterFilter.and(beforeFilter);
+    } else {
+      return afterFilter != null ? afterFilter : beforeFilter;
     }
   }
 }
