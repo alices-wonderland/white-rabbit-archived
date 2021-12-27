@@ -1,17 +1,19 @@
 package com.ukonnra.wonderland.whiterabbit.core;
 
+import com.ukonnra.wonderland.whiterabbit.core.entity.AbstractEntity;
 import com.ukonnra.wonderland.whiterabbit.core.entity.Book;
 import com.ukonnra.wonderland.whiterabbit.core.entity.QUser;
 import com.ukonnra.wonderland.whiterabbit.core.entity.User;
-import com.ukonnra.wonderland.whiterabbit.core.query.Cursor;
+import com.ukonnra.wonderland.whiterabbit.core.query.Pagination;
 import com.ukonnra.wonderland.whiterabbit.core.repository.BookRepository;
 import com.ukonnra.wonderland.whiterabbit.core.repository.UserRepository;
 import com.ukonnra.wonderland.whiterabbit.core.service.BookService;
 import com.ukonnra.wonderland.whiterabbit.core.service.UserService;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.IntStream;
 import javax.transaction.Transactional;
@@ -38,6 +40,8 @@ class CoreTest {
   @EnableAutoConfiguration
   @Import({CoreConfiguration.class})
   static class Configuration {}
+
+  private static final Base64.Encoder ENCODER = Base64.getUrlEncoder();
 
   private final BookRepository bookRepository;
   private final UserRepository userRepository;
@@ -66,6 +70,11 @@ class CoreTest {
     this.userRepository = userRepository;
     this.bookService = bookService;
     this.userService = userService;
+  }
+
+  private static <T extends AbstractEntity> String createCursor(final T entity) {
+    return ENCODER.encodeToString(
+        Objects.requireNonNull(entity.getId()).toString().getBytes(StandardCharsets.UTF_8));
   }
 
   @Test
@@ -154,8 +163,7 @@ class CoreTest {
             .findAll(
                 QUser.user.name.startsWith("User"),
                 Sort.by("name"),
-                new Cursor.Pagination.Unidirectional(
-                    new Cursor(targetUser.getId(), Map.of("name", targetUser.getName())), false, 3))
+                new Pagination.Unidirectional(createCursor(targetUser), false, 3))
             .collectList()
             .block();
     Assertions.assertThat(resultQueryBefore).isEqualTo(users.subList(0, 2));
@@ -165,8 +173,7 @@ class CoreTest {
             .findAll(
                 QUser.user.name.startsWith("User"),
                 Sort.by("name"),
-                new Cursor.Pagination.Unidirectional(
-                    new Cursor(targetUser.getId(), Map.of("name", targetUser.getName())), true, 3))
+                new Pagination.Unidirectional(createCursor(targetUser), true, 3))
             .collectList()
             .block();
     Assertions.assertThat(resultQueryAfter).isEqualTo(users.subList(3, 5));
@@ -176,7 +183,7 @@ class CoreTest {
             .findAll(
                 QUser.user.name.startsWith("User"),
                 Sort.by("name"),
-                new Cursor.Pagination.Unidirectional(null, true, 3))
+                new Pagination.Unidirectional(null, true, 3))
             .collectList()
             .block();
     Assertions.assertThat(resultQueryHead).isEqualTo(users.subList(0, 3));
@@ -186,7 +193,7 @@ class CoreTest {
             .findAll(
                 QUser.user.name.startsWith("User"),
                 Sort.by("name"),
-                new Cursor.Pagination.Unidirectional(null, false, 3))
+                new Pagination.Unidirectional(null, false, 3))
             .collectList()
             .block();
     Assertions.assertThat(resultQueryTail).isEqualTo(users.subList(2, 5));
@@ -196,11 +203,8 @@ class CoreTest {
             .findAll(
                 QUser.user.name.startsWith("User"),
                 Sort.by("name"),
-                new Cursor.Pagination.Bidirectional(
-                    new Cursor(users.get(0).getId(), Map.of("name", users.get(0).getName())),
-                    new Cursor(users.get(4).getId(), Map.of("name", users.get(4).getName())),
-                    2,
-                    true))
+                new Pagination.Bidirectional(
+                    createCursor(users.get(0)), createCursor(users.get(4)), 2, true))
             .collectList()
             .block();
     Assertions.assertThat(resultQueryBetween).isEqualTo(users.subList(1, 3));
@@ -210,11 +214,8 @@ class CoreTest {
             .findAll(
                 QUser.user.name.startsWith("User"),
                 Sort.by("name"),
-                new Cursor.Pagination.Bidirectional(
-                    new Cursor(users.get(0).getId(), Map.of("name", users.get(0).getName())),
-                    new Cursor(users.get(4).getId(), Map.of("name", users.get(4).getName())),
-                    2,
-                    false))
+                new Pagination.Bidirectional(
+                    createCursor(users.get(0)), createCursor(users.get(4)), 2, false))
             .collectList()
             .block();
     Assertions.assertThat(resultQueryBetweenBefore).isEqualTo(users.subList(2, 4));
@@ -224,11 +225,8 @@ class CoreTest {
             .findAll(
                 QUser.user.name.startsWith("User"),
                 Sort.by(Sort.Direction.DESC, "name"),
-                new Cursor.Pagination.Bidirectional(
-                    new Cursor(users.get(4).getId(), Map.of("name", users.get(4).getName())),
-                    new Cursor(users.get(0).getId(), Map.of("name", users.get(0).getName())),
-                    2,
-                    true))
+                new Pagination.Bidirectional(
+                    createCursor(users.get(4)), createCursor(users.get(0)), 2, true))
             .collectList()
             .block();
     Assertions.assertThat(resultQueryBetweenReversed)

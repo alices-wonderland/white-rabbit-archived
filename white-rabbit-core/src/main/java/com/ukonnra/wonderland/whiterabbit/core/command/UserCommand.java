@@ -4,7 +4,7 @@ import java.util.Set;
 import java.util.UUID;
 import org.springframework.lang.Nullable;
 
-public sealed interface UserCommand
+public sealed interface UserCommand extends AbstractCommand
     permits UserCommand.ChangeManager, UserCommand.Create, UserCommand.Delete, UserCommand.Update {
   record Create(@Nullable UUID id, String name, @Nullable UUID managerId) implements UserCommand {}
 

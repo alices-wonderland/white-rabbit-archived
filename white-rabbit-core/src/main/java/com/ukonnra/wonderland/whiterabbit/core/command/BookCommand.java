@@ -3,7 +3,7 @@ package com.ukonnra.wonderland.whiterabbit.core.command;
 import java.util.UUID;
 import org.springframework.lang.Nullable;
 
-public sealed interface BookCommand
+public sealed interface BookCommand extends AbstractCommand
     permits BookCommand.ChangeAuthor, BookCommand.Create, BookCommand.Delete, BookCommand.Update {
   record Create(@Nullable UUID id, String name, UUID authorId) implements BookCommand {}
 

@@ -1,13 +1,12 @@
 package com.ukonnra.wonderland.whiterabbit.endpoint.graphql.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ukonnra.wonderland.whiterabbit.core.entity.Book;
 import com.ukonnra.wonderland.whiterabbit.core.entity.QBook;
 import com.ukonnra.wonderland.whiterabbit.core.entity.User;
-import com.ukonnra.wonderland.whiterabbit.core.query.Cursor;
+import com.ukonnra.wonderland.whiterabbit.core.query.Pagination;
 import com.ukonnra.wonderland.whiterabbit.core.service.BookService;
 import com.ukonnra.wonderland.whiterabbit.core.service.UserService;
+import com.ukonnra.wonderland.whiterabbit.endpoint.graphql.ApplicationException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -29,12 +28,10 @@ import reactor.core.publisher.Mono;
 public class GraphqlController {
   private final UserService userService;
   private final BookService bookService;
-  private final ObjectMapper mapper;
 
-  public GraphqlController(UserService userService, BookService bookService, ObjectMapper mapper) {
+  public GraphqlController(UserService userService, BookService bookService) {
     this.userService = userService;
     this.bookService = bookService;
-    this.mapper = mapper;
 
     Mono.fromCallable(
             () -> {
@@ -82,17 +79,17 @@ public class GraphqlController {
 
   private record OrderDTO(String property, Sort.Direction direction) {}
 
-  private Cursor.Pagination createPaginationWithSize(
-      final Cursor after, final Cursor before, int size, boolean isAfter) {
-    Cursor.Pagination pagination;
+  private Pagination createPaginationWithSize(
+      final String after, final String before, int size, boolean isAfter) {
+    Pagination pagination;
     if (after != null && before != null) {
-      pagination = new Cursor.Pagination.Bidirectional(after, before, size, isAfter);
+      pagination = new Pagination.Bidirectional(after, before, size, isAfter);
     } else if (after != null && isAfter) {
-      pagination = new Cursor.Pagination.Unidirectional(after, true, size);
+      pagination = new Pagination.Unidirectional(after, true, size);
     } else if (before != null && !isAfter) {
-      pagination = new Cursor.Pagination.Unidirectional(before, false, size);
+      pagination = new Pagination.Unidirectional(before, false, size);
     } else {
-      pagination = new Cursor.Pagination.Unidirectional(null, isAfter, size);
+      pagination = new Pagination.Unidirectional(null, isAfter, size);
     }
     return pagination;
   }
@@ -105,20 +102,16 @@ public class GraphqlController {
       @Argument @Nullable Integer last,
       @Argument @Nullable String before,
       @Argument String filter,
-      @Argument List<OrderDTO> sort)
-      throws JsonProcessingException {
-    var afterCursor = after == null ? null : this.mapper.readValue(after, Cursor.class);
-    var beforeCursor = before == null ? null : this.mapper.readValue(before, Cursor.class);
-
-    Cursor.Pagination pagination;
+      @Argument List<OrderDTO> sort) {
+    Pagination pagination;
     if (first != null && last != null) {
-      throw new RuntimeException("`first` and `last` cannot show in the same time");
+      throw new ApplicationException.ExclusiveFirstAndLastFields();
     } else if (first != null) {
-      pagination = createPaginationWithSize(afterCursor, beforeCursor, first, true);
+      pagination = createPaginationWithSize(after, before, first, true);
     } else if (last != null) {
-      pagination = createPaginationWithSize(afterCursor, beforeCursor, last, false);
+      pagination = createPaginationWithSize(after, before, last, false);
     } else {
-      pagination = createPaginationWithSize(afterCursor, beforeCursor, 2, true);
+      pagination = createPaginationWithSize(after, before, 2, true);
     }
 
     return this.bookService
