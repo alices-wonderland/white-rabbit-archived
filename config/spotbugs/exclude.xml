@@ -10,4 +10,11 @@
   <Match>
     <Class name="~.*\$\$SpringProxy\$.*" />
   </Match>
+  <Match>
+    <Or>
+      <Method name="equals"/>
+      <Method name="hashCode"/>
+    </Or>
+    <Bug code="RCN" />
+  </Match>
 </FindBugsFilter>
