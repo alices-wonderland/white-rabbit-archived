@@ -22,6 +22,8 @@ dependencies {
   implementation("io.spring.gradle:dependency-management-plugin:1.0.11.RELEASE")
   implementation("org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:3.3")
   implementation("com.palantir.gradle.docker:gradle-docker:0.31.0")
+  implementation("org.javamodularity:moduleplugin:1.8.10")
+  implementation("gradle.plugin.com.github.johnrengelman:shadow:7.1.1")
 }
 
 gradlePlugin {
