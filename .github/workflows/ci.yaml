@@ -63,6 +63,6 @@ jobs:
           PACKAGE_VERSION=$(./gradlew properties --no-daemon --console=plain -q | grep "^version:" | awk '{printf $2}') &&
           export IMAGE_TAG=$(./scripts/parse-branch.py ${{ github.ref }} $PACKAGE_VERSION) &&
           echo "Image Tag: $IMAGE_TAG" &&
-          ./gradlew clean bootJar docker &&
+          ./gradlew clean shadowJar docker &&
           echo ${{ secrets.DOCKER_TOKEN }} | docker login --username ukonnra --password-stdin &&
           docker push ukonnra/white-rabbit-endpoint-graphql:$IMAGE_TAG

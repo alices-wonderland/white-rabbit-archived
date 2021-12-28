@@ -18,27 +18,19 @@
   ```yaml
   spring:
     datasource:
-      url: jdbc:postgresql://<real-ip>:5432/white-rabbit?createDatabaseIfNotExist=true
+      url: jdbc:postgresql://<database-host>:5432/white-rabbit?createDatabaseIfNotExist=true
+      username: <database-username>
+      password: <database-password>
     jpa:
       hibernate:
         ddl-auto: create
       show-sql: true
   server:
     ssl:
-      key-store: classpath:keystore/white-rabbit.p12
+      key-store: /keystore/wonderland.p12
       key-store-password: <password>
-      key-alias: white-rabbit
+      key-alias: wonderland
   ```
-
-### When Building Image
-
-For proxy, set `export BUILD_IMAGE_PROXY=<proxy>` or `$env:BUILD_IMAGE_PROXY="<proxy>"` before building the native image.
-The proxy IP should be **the host IP in Docker image**, since the building process are running in the Docker container.
-
-Then run:
-```
-./gradlew clean test :white-rabbit-endpoint-graphql:bootBuildImage
-```
 
 ### Check Code Style
 
@@ -49,5 +41,11 @@ Then run:
 ### Run the Docker Image
 
 ```
-docker run -it --rm -p 8443:8443 -v <external-keystore>:/keystore/  -v <config-with-secrets>:/external-config/application-prod.yaml -e spring_profiles_active=prod -e "SERVER_SSL_KEY-STORE=/keystore/white-rabbit.p12" -e "SPRING_CONFIG_IMPORT=/external-config/application-prod.yaml"  ukonnra/white-rabbit-endpoint-graphql:latest
+docker run -it --rm -p 8443:8443 \
+  -v <external-keystore>:/keystore/ \
+  -v <config-with-secrets>:/external-config/application-prod.yaml \
+  -e spring_profiles_active=prod \
+  -e "SPRING_CONFIG_IMPORT=/external-config/application-prod.yaml" \
+  --network=<the-database-network> \
+  ukonnra/white-rabbit-endpoint-graphql:latest
 ```
