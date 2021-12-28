@@ -16,17 +16,13 @@ Error when using records with generics:
 @Value
 @AllArgsConstructor
 @Slf4j
-public class CursorPage<T extends AbstractEntity> {
+public class Page<T extends AbstractEntity> {
   PageInfo pageInfo;
-  List<PageItem<T>> items;
+  List<Item<T>> items;
 
-  public CursorPage() {
+  public Page() {
     this.pageInfo = new PageInfo();
     this.items = List.of();
-  }
-
-  public List<T> getItemContents() {
-    return items.stream().map(PageItem::getItem).toList();
   }
 
   public record PageInfo(
@@ -40,13 +36,13 @@ public class CursorPage<T extends AbstractEntity> {
   }
 
   @Value
-  public static class PageItem<T extends AbstractEntity> {
+  public static class Item<T extends AbstractEntity> {
     String cursor;
-    T item;
+    T data;
 
-    public PageItem(T item) {
-      this.cursor = Cursor.of(item);
-      this.item = item;
+    public Item(T data) {
+      this.cursor = Cursor.of(data);
+      this.data = data;
     }
   }
 
@@ -82,8 +78,7 @@ public class CursorPage<T extends AbstractEntity> {
    * @param <T> The entity class
    * @return The pagination result
    */
-  public static <T extends AbstractEntity> CursorPage<T> of(
-      List<T> entities, Pagination pagination) {
+  public static <T extends AbstractEntity> Page<T> of(List<T> entities, Pagination pagination) {
     var entitiesExceedingTarget = entities.size() > pagination.size();
 
     // When exceeding, meaning there are next page or previous page
@@ -104,7 +99,7 @@ public class CursorPage<T extends AbstractEntity> {
     }
 
     if (first == null && last == null) {
-      return new CursorPage<>();
+      return new Page<>();
     }
 
     boolean hasPreviousPage, hasNextPage;
@@ -119,16 +114,16 @@ public class CursorPage<T extends AbstractEntity> {
       hasNextPage = pagination.before() != null;
     }
 
-    var items = new LinkedList<PageItem<T>>();
+    var items = new LinkedList<Item<T>>();
     for (var e : entities) {
       if (pagination.isAfter()) {
-        items.addLast(new PageItem<>(e));
+        items.addLast(new Item<>(e));
       } else {
-        items.addFirst(new PageItem<>(e));
+        items.addFirst(new Item<>(e));
       }
     }
 
-    return new CursorPage<>(
+    return new Page<>(
         new PageInfo(
             hasPreviousPage,
             hasNextPage,

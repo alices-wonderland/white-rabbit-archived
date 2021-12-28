@@ -1,10 +1,11 @@
 package com.ukonnra.wonderland.whiterabbit.core;
 
+import com.ukonnra.wonderland.whiterabbit.core.entity.AbstractEntity;
 import com.ukonnra.wonderland.whiterabbit.core.entity.Book;
 import com.ukonnra.wonderland.whiterabbit.core.entity.QUser;
 import com.ukonnra.wonderland.whiterabbit.core.entity.User;
 import com.ukonnra.wonderland.whiterabbit.core.query.Cursor;
-import com.ukonnra.wonderland.whiterabbit.core.query.CursorPage;
+import com.ukonnra.wonderland.whiterabbit.core.query.Page;
 import com.ukonnra.wonderland.whiterabbit.core.query.Pagination;
 import com.ukonnra.wonderland.whiterabbit.core.repository.BookRepository;
 import com.ukonnra.wonderland.whiterabbit.core.repository.UserRepository;
@@ -67,6 +68,10 @@ class CoreTest {
     this.userRepository = userRepository;
     this.bookService = bookService;
     this.userService = userService;
+  }
+
+  private static <T extends AbstractEntity> List<T> getItemContents(final Page<T> page) {
+    return page.getItems().stream().map(Page.Item::getData).toList();
   }
 
   @Test
@@ -160,12 +165,11 @@ class CoreTest {
               .block();
       Assertions.assertThat(pageBefore)
           .isNotNull()
-          .extracting(CursorPage::getItemContents)
+          .extracting(CoreTest::getItemContents)
           .isEqualTo(users.subList(0, 2));
       Assertions.assertThat(pageBefore.getPageInfo())
           .isEqualTo(
-              new CursorPage.PageInfo(
-                  false, true, Cursor.of(users.get(0)), Cursor.of(users.get(1))));
+              new Page.PageInfo(false, true, Cursor.of(users.get(0)), Cursor.of(users.get(1))));
     }
 
     {
@@ -178,12 +182,11 @@ class CoreTest {
               .block();
       Assertions.assertThat(pageAfter)
           .isNotNull()
-          .extracting(CursorPage::getItemContents)
+          .extracting(CoreTest::getItemContents)
           .isEqualTo(users.subList(3, 5));
       Assertions.assertThat(pageAfter.getPageInfo())
           .isEqualTo(
-              new CursorPage.PageInfo(
-                  true, false, Cursor.of(users.get(3)), Cursor.of(users.get(4))));
+              new Page.PageInfo(true, false, Cursor.of(users.get(3)), Cursor.of(users.get(4))));
     }
 
     {
@@ -196,12 +199,11 @@ class CoreTest {
               .block();
       Assertions.assertThat(pageHead)
           .isNotNull()
-          .extracting(CursorPage::getItemContents)
+          .extracting(CoreTest::getItemContents)
           .isEqualTo(users.subList(0, 3));
       Assertions.assertThat(pageHead.getPageInfo())
           .isEqualTo(
-              new CursorPage.PageInfo(
-                  false, true, Cursor.of(users.get(0)), Cursor.of(users.get(2))));
+              new Page.PageInfo(false, true, Cursor.of(users.get(0)), Cursor.of(users.get(2))));
     }
     {
       var pageTail =
@@ -213,12 +215,11 @@ class CoreTest {
               .block();
       Assertions.assertThat(pageTail)
           .isNotNull()
-          .extracting(CursorPage::getItemContents)
+          .extracting(CoreTest::getItemContents)
           .isEqualTo(users.subList(2, 5));
       Assertions.assertThat(pageTail.getPageInfo())
           .isEqualTo(
-              new CursorPage.PageInfo(
-                  true, false, Cursor.of(users.get(2)), Cursor.of(users.get(4))));
+              new Page.PageInfo(true, false, Cursor.of(users.get(2)), Cursor.of(users.get(4))));
     }
     {
       var pageBetween =
@@ -230,12 +231,11 @@ class CoreTest {
               .block();
       Assertions.assertThat(pageBetween)
           .isNotNull()
-          .extracting(CursorPage::getItemContents)
+          .extracting(CoreTest::getItemContents)
           .isEqualTo(users.subList(1, 3));
       Assertions.assertThat(pageBetween.getPageInfo())
           .isEqualTo(
-              new CursorPage.PageInfo(
-                  true, true, Cursor.of(users.get(1)), Cursor.of(users.get(2))));
+              new Page.PageInfo(true, true, Cursor.of(users.get(1)), Cursor.of(users.get(2))));
     }
     {
       var pageBetweenBefore =
@@ -247,12 +247,11 @@ class CoreTest {
               .block();
       Assertions.assertThat(pageBetweenBefore)
           .isNotNull()
-          .extracting(CursorPage::getItemContents)
+          .extracting(CoreTest::getItemContents)
           .isEqualTo(users.subList(2, 4));
       Assertions.assertThat(pageBetweenBefore.getPageInfo())
           .isEqualTo(
-              new CursorPage.PageInfo(
-                  true, true, Cursor.of(users.get(2)), Cursor.of(users.get(3))));
+              new Page.PageInfo(true, true, Cursor.of(users.get(2)), Cursor.of(users.get(3))));
     }
     {
       var pageBetweenReversed =
@@ -264,12 +263,11 @@ class CoreTest {
               .block();
       Assertions.assertThat(pageBetweenReversed)
           .isNotNull()
-          .extracting(CursorPage::getItemContents)
+          .extracting(CoreTest::getItemContents)
           .isEqualTo(List.of(users.get(3), users.get(2)));
       Assertions.assertThat(pageBetweenReversed.getPageInfo())
           .isEqualTo(
-              new CursorPage.PageInfo(
-                  true, true, Cursor.of(users.get(3)), Cursor.of(users.get(2))));
+              new Page.PageInfo(true, true, Cursor.of(users.get(3)), Cursor.of(users.get(2))));
     }
     {
       var pageEmpty =
@@ -280,9 +278,9 @@ class CoreTest {
                   new Pagination(Cursor.of(users.get(0)), Cursor.of(users.get(4)), 2, true))
               .block();
       Assertions.assertThat(pageEmpty).isNotNull();
-      Assertions.assertThat(pageEmpty.getItemContents()).isEmpty();
+      Assertions.assertThat(getItemContents(pageEmpty)).isEmpty();
       Assertions.assertThat(pageEmpty.getPageInfo())
-          .isEqualTo(new CursorPage.PageInfo(false, false, null, null));
+          .isEqualTo(new Page.PageInfo(false, false, null, null));
     }
   }
 }

@@ -8,11 +8,6 @@
 #RUN jar xvf app.jar
 #
 #RUN jdeps -cp 'BOOT-INF/lib/*' -recursive --multi-release 17 --ignore-missing-deps -q --print-module-deps app.jar > jdeps.info
-#
-## Due to the missing SSL related dependency, no idea why it is not in the jdeps
-## https://stackoverflow.com/questions/55439599/sslhandshakeexception-with-jlink-created-runtime/55517159#comment97595874_55439599
-## Article Related: https://mbien.dev/blog/entry/custom-java-runtimes-with-jlink
-#RUN echo "$(cat jdeps.info),jdk.crypto.ec" > jdeps.info
 
 FROM openjdk:17-alpine AS builder
 
@@ -20,6 +15,9 @@ COPY white-rabbit-endpoint-graphql-all.jar app.jar
 
 RUN jdeps --ignore-missing-deps -q --print-module-deps app.jar > jdeps.info
 
+## Due to the missing SSL related dependency, no idea why it is not in the jdeps
+## https://stackoverflow.com/questions/55439599/sslhandshakeexception-with-jlink-created-runtime/55517159#comment97595874_55439599
+## Article Related: https://mbien.dev/blog/entry/custom-java-runtimes-with-jlink
 RUN echo "$(cat jdeps.info),jdk.crypto.ec" > jdeps.info
 
 RUN jlink --verbose --compress 2 --strip-java-debug-attributes --no-header-files --no-man-pages --output jre \

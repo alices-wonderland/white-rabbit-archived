@@ -43,9 +43,9 @@
 ```
 docker run -it --rm -p 8443:8443 \
   -v <external-keystore>:/keystore/ \
-  -v <config-with-secrets>:/external-config/application-prod.yaml \
-  -e spring_profiles_active=prod \
-  -e "SPRING_CONFIG_IMPORT=/external-config/application-prod.yaml" \
+  -v <config-with-secrets>:/external-config/application-dev.yaml \
+  -e spring_profiles_active=dev \
+  -e "SPRING_CONFIG_IMPORT=/external-config/application-dev.yaml" \
   --network=<the-database-network> \
   ukonnra/white-rabbit-endpoint-graphql:latest
 ```

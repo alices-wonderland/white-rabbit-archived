@@ -3,7 +3,7 @@ package com.ukonnra.wonderland.whiterabbit.endpoint.graphql.controller;
 import com.ukonnra.wonderland.whiterabbit.core.entity.Book;
 import com.ukonnra.wonderland.whiterabbit.core.entity.QBook;
 import com.ukonnra.wonderland.whiterabbit.core.entity.User;
-import com.ukonnra.wonderland.whiterabbit.core.query.CursorPage;
+import com.ukonnra.wonderland.whiterabbit.core.query.Page;
 import com.ukonnra.wonderland.whiterabbit.core.query.Pagination;
 import com.ukonnra.wonderland.whiterabbit.core.service.BookService;
 import com.ukonnra.wonderland.whiterabbit.core.service.UserService;
@@ -85,7 +85,7 @@ public class GraphqlController {
   }
 
   @SchemaMapping(typeName = "User")
-  public Mono<CursorPage<Book>> books(
+  public Mono<Page<Book>> books(
       final User user,
       @Argument @Nullable Integer first,
       @Argument @Nullable String after,

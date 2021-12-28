@@ -3,3 +3,13 @@ server:
   ssl:
     key-store-type: PKCS12
     enabled: true
+spring:
+  graphql:
+    schema:
+      # How to load resources when using module-info.java:
+      # https://leward.eu/2020/02/16/java-load-resource-from-another-module.html
+      # Since the location is a folder, rather a single file,
+      # `PathMatchingResourcePatternResolver` (used to load `*.graphqls` files)
+      # can only use local ClassLoader (to load resources from a single module),
+      # but not SystemClassLoader (to load all modules' resources)
+      locations: classpath:whiterabbit.endpoint.graphql/graphql/**/

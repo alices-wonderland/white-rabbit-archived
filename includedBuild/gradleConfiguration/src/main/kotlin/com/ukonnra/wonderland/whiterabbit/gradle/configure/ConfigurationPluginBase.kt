@@ -68,7 +68,7 @@ abstract class ConfigurationPluginBase : Plugin<Project> {
     target.configure<JavaPluginExtension> {
       sourceCompatibility = JAVA_VERSION
       targetCompatibility = JAVA_VERSION
-      modularity.inferModulePath.set(false)
+      modularity.inferModulePath.set(true)
     }
 
     target.configure<JacocoPluginExtension> {
@@ -86,7 +86,7 @@ abstract class ConfigurationPluginBase : Plugin<Project> {
       }
 
       sourceSets = sourceSetsNeeded
-      toolVersion = "9.2"
+      toolVersion = "9.2.1"
     }
 
     target.configure<SpotlessExtension> {
