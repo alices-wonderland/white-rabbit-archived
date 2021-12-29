@@ -25,7 +25,7 @@ type PageInfo {
 
 type BookNode {
   cursor: String!
-  item: Book!
+  data: Book!
 }
 
 type BookConnection {

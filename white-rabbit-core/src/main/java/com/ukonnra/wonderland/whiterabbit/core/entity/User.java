@@ -29,4 +29,7 @@ public final class User extends AbstractEntity {
   @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
   @ToString.Exclude
   private Set<Book> books = new HashSet<>();
+
+  // TODO: need field level access control
+  private String privateData;
 }

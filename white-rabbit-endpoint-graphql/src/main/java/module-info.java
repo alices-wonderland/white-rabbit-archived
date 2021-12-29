@@ -26,4 +26,9 @@ module whiterabbit.endpoint.graphql {
   requires spring.core;
   requires spring.data.commons;
   requires spring.graphql;
+  requires spring.webflux;
+  requires spring.security.config;
+  requires spring.security.core;
+  requires spring.security.oauth2.resource.server;
+  requires spring.security.web;
 }

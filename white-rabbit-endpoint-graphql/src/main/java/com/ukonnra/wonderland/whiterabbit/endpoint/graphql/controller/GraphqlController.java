@@ -19,6 +19,8 @@ import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.lang.Nullable;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Controller;
 import reactor.core.publisher.Mono;
 
@@ -62,8 +64,10 @@ public class GraphqlController {
   @QueryMapping
   public Mono<User> user(@Argument UUID id) {
     log.info("Start get User[{}]", id);
-    return this.userService
-        .findById(id)
+    return ReactiveSecurityContextHolder.getContext()
+        .map(ctx -> (JwtAuthenticationToken) ctx.getAuthentication())
+        .doOnNext(a -> log.info("Get logged in user: {}", a.getName()))
+        .then(this.userService.findById(id))
         .doOnNext(u -> log.info("User[{}, name = {}] get", u.getId(), u.getName()));
   }
 

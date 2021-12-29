@@ -28,6 +28,7 @@ module whiterabbit.core {
   requires spring.data.commons;
   requires spring.data.jpa;
   requires spring.security.core;
-  requires spring.tx;
   requires spring.security.config;
+  requires spring.security.web;
+  requires spring.tx;
 }
