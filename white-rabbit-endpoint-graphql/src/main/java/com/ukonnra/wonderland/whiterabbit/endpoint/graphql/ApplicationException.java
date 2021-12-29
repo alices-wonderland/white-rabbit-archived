@@ -1,6 +1,6 @@
 package com.ukonnra.wonderland.whiterabbit.endpoint.graphql;
 
-import com.ukonnra.wonderland.whiterabbit.core.CoreException;
+import com.ukonnra.wonderland.whiterabbit.core.infrastructure.CoreException;
 import lombok.EqualsAndHashCode;
 
 public abstract sealed class ApplicationException extends CoreException {

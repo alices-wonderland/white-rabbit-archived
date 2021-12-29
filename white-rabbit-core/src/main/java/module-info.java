@@ -1,19 +1,18 @@
 module whiterabbit.core {
   exports com.ukonnra.wonderland.whiterabbit.core;
-  exports com.ukonnra.wonderland.whiterabbit.core.command;
-  exports com.ukonnra.wonderland.whiterabbit.core.entity;
-  exports com.ukonnra.wonderland.whiterabbit.core.query;
-  exports com.ukonnra.wonderland.whiterabbit.core.service;
+  exports com.ukonnra.wonderland.whiterabbit.core.auth;
+  exports com.ukonnra.wonderland.whiterabbit.core.domain.journal;
+  exports com.ukonnra.wonderland.whiterabbit.core.domain.journal.enetity;
+  exports com.ukonnra.wonderland.whiterabbit.core.domain.user;
+  exports com.ukonnra.wonderland.whiterabbit.core.infrastructure;
+  exports com.ukonnra.wonderland.whiterabbit.core.infrastructure.query;
 
-  opens com.ukonnra.wonderland.whiterabbit.core to
-      spring.beans,
-      spring.context,
-      spring.core;
-  opens com.ukonnra.wonderland.whiterabbit.core.entity;
-  opens com.ukonnra.wonderland.whiterabbit.core.query;
-  opens com.ukonnra.wonderland.whiterabbit.core.service to
-      spring.beans,
-      spring.core;
+  opens com.ukonnra.wonderland.whiterabbit.core;
+  opens com.ukonnra.wonderland.whiterabbit.core.domain.journal;
+  opens com.ukonnra.wonderland.whiterabbit.core.domain.journal.enetity;
+  opens com.ukonnra.wonderland.whiterabbit.core.domain.user;
+  opens com.ukonnra.wonderland.whiterabbit.core.infrastructure;
+  opens com.ukonnra.wonderland.whiterabbit.core.infrastructure.query;
 
   requires java.compiler;
   requires java.persistence;
