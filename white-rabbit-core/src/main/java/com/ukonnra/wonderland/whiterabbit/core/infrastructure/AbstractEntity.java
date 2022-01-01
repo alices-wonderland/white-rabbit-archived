@@ -15,9 +15,10 @@ import org.springframework.data.jpa.domain.AbstractAuditable;
 @ToString(callSuper = true)
 @NoArgsConstructor
 @MappedSuperclass
-public abstract class AbstractEntity<PreT extends AbstractPresentationModel>
+@SuppressWarnings("squid:S2160")
+public abstract class AbstractEntity<P extends AbstractPresentationModel>
     extends AbstractAuditable<User, UUID> {
   @Version private Long version;
 
-  public abstract PreT toPresentationModel();
+  public abstract P toPresentationModel();
 }

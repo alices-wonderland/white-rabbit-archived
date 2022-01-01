@@ -18,9 +18,9 @@ Error when using records with generics:
 @Value
 @AllArgsConstructor
 @Slf4j
-public class Page<PreT extends AbstractPresentationModel> {
+public class Page<P extends AbstractPresentationModel> {
   PageInfo pageInfo;
-  List<Item<PreT>> items;
+  List<Item<P>> items;
 
   public Page() {
     this.pageInfo = new PageInfo();
@@ -39,12 +39,12 @@ public class Page<PreT extends AbstractPresentationModel> {
 
   @Value
   @AllArgsConstructor(access = AccessLevel.PRIVATE)
-  public static class Item<PreT extends AbstractPresentationModel> {
+  public static class Item<P extends AbstractPresentationModel> {
     @Nullable String cursor;
-    PreT data;
+    P data;
 
-    public static <E extends AbstractEntity<PreT>, PreT extends AbstractPresentationModel>
-        Item<PreT> of(final E entity) {
+    public static <E extends AbstractEntity<P>, P extends AbstractPresentationModel> Item<P> of(
+        final E entity) {
       return new Item<>(Cursor.of(entity).orElse(null), entity.toPresentationModel());
     }
   }
@@ -79,11 +79,11 @@ public class Page<PreT extends AbstractPresentationModel> {
    *     entities
    * @param pagination The pagination from the query request
    * @param <E> The entity class
-   * @param <PreT> The presentation model class
+   * @param <P> The presentation model class
    * @return The pagination result
    */
-  public static <E extends AbstractEntity<PreT>, PreT extends AbstractPresentationModel>
-      Page<PreT> of(List<E> entities, Pagination pagination) {
+  public static <E extends AbstractEntity<P>, P extends AbstractPresentationModel> Page<P> of(
+      List<E> entities, Pagination pagination) {
     var entitiesExceedingTarget = entities.size() > pagination.size();
 
     // When exceeding, meaning there are next page or previous page
@@ -91,8 +91,10 @@ public class Page<PreT extends AbstractPresentationModel> {
       entities = entities.subList(0, entities.size() - 1);
     }
 
-    E first = null, last = null;
-    if (entities.size() > 0) {
+    E first = null;
+    E last = null;
+
+    if (!entities.isEmpty()) {
       first = entities.get(0);
       last = entities.get(entities.size() - 1);
     }
@@ -107,7 +109,9 @@ public class Page<PreT extends AbstractPresentationModel> {
       return new Page<>();
     }
 
-    boolean hasPreviousPage, hasNextPage;
+    boolean hasPreviousPage;
+    boolean hasNextPage;
+
     if (pagination.before() != null && pagination.after() != null) {
       hasPreviousPage = true;
       hasNextPage = true;
@@ -119,7 +123,7 @@ public class Page<PreT extends AbstractPresentationModel> {
       hasNextPage = pagination.before() != null;
     }
 
-    var items = new LinkedList<Item<PreT>>();
+    var items = new LinkedList<Item<P>>();
     for (var e : entities) {
       if (pagination.isAfter()) {
         items.addLast(Item.of(e));

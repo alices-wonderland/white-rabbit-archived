@@ -7,5 +7,5 @@ import org.springframework.data.repository.NoRepositoryBean;
 
 @NoRepositoryBean
 public interface AbstractRepository<
-        T extends AbstractEntity<PreT>, PreT extends AbstractPresentationModel>
+        T extends AbstractEntity<P>, P extends AbstractPresentationModel>
     extends JpaRepository<T, UUID>, QuerydslPredicateExecutor<T> {}

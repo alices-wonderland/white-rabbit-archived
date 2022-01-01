@@ -23,6 +23,8 @@ dependencies {
 
   annotationProcessor("com.querydsl:querydsl-apt:5.0.0:jpa")
   annotationProcessor("jakarta.persistence:jakarta.persistence-api:2.2.3")
+
+  testImplementation("org.springframework.security:spring-security-test")
 }
 
 extensions.configure<org.hibernate.orm.tooling.gradle.HibernateExtension> {

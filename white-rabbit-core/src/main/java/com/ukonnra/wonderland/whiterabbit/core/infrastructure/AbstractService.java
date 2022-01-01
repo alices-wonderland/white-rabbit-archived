@@ -16,9 +16,9 @@ import reactor.core.scheduler.Schedulers;
 
 @Transactional
 public abstract class AbstractService<
-    T extends AbstractEntity<PreT>,
-    R extends AbstractRepository<T, PreT>,
-    PreT extends AbstractPresentationModel> {
+    T extends AbstractEntity<P>,
+    R extends AbstractRepository<T, P>,
+    P extends AbstractPresentationModel> {
   protected final R repository;
 
   protected AbstractService(R repository) {
@@ -53,13 +53,13 @@ public abstract class AbstractService<
     }
   }
 
-  public Mono<PreT> save(T entity) {
+  public Mono<P> save(T entity) {
     return Mono.fromCallable(() -> this.repository.save(entity))
         .subscribeOn(Schedulers.boundedElastic())
         .map(T::toPresentationModel);
   }
 
-  public Mono<PreT> findById(UUID id) {
+  public Mono<P> findById(UUID id) {
     return Mono.fromCallable(() -> this.repository.findById(id))
         .subscribeOn(Schedulers.boundedElastic())
         .flatMap(Mono::justOrEmpty)
@@ -102,7 +102,7 @@ public abstract class AbstractService<
    * @param pagination The cursor-based pagination info
    * @return Entities pagination result
    */
-  public Mono<Page<PreT>> findAll(
+  public Mono<Page<P>> findAll(
       final BooleanExpression filter, final Sort sort, final Pagination pagination) {
     var paginationFilter = pagination.createFilter(this::createPaginationItemFilterByField, sort);
     var paginationSort = pagination.createSort(sort);

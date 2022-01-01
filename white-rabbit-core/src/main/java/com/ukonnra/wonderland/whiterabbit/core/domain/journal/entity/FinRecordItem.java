@@ -1,4 +1,4 @@
-package com.ukonnra.wonderland.whiterabbit.core.domain.journal.enetity;
+package com.ukonnra.wonderland.whiterabbit.core.domain.journal.entity;
 
 import com.ukonnra.wonderland.whiterabbit.core.infrastructure.AbstractEntity;
 import com.ukonnra.wonderland.whiterabbit.core.infrastructure.AbstractPresentationModel;
@@ -17,29 +17,38 @@ import lombok.ToString;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.lang.Nullable;
 
-@Entity(name = "inventoryRecords")
+@Entity(name = "finRecordItems")
 @Getter
 @Setter
 @ToString(callSuper = true)
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-public final class InventoryRecord extends AbstractEntity<FinRecord.PresentationModel> {
+@SuppressWarnings("squid:S2160")
+public class FinRecordItem extends AbstractEntity<FinRecordItem.PresentationModel> {
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @ToString.Exclude
-  private Inventory inventory;
+  private Account account;
 
-  private @Column(nullable = false) @PositiveOrZero BigDecimal amount;
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @ToString.Exclude
+  private FinRecord finRecord;
+
+  @Column(nullable = false)
+  private @PositiveOrZero BigDecimal amount;
 
   private @Nullable String buyingUnit;
 
   private @Nullable BigDecimal buyingPrice;
 
+  private @Nullable String note;
+
   @Override
-  public FinRecord.PresentationModel toPresentationModel() {
+  public PresentationModel toPresentationModel() {
     return null;
   }
 
-  record PresentationModel() implements AbstractPresentationModel {
+  public record PresentationModel() implements AbstractPresentationModel {
+
     @Override
     public UUID id() {
       return null;

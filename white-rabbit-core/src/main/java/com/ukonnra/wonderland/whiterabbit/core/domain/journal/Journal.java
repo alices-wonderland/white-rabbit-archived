@@ -1,7 +1,7 @@
 package com.ukonnra.wonderland.whiterabbit.core.domain.journal;
 
-import com.ukonnra.wonderland.whiterabbit.core.domain.journal.enetity.Account;
-import com.ukonnra.wonderland.whiterabbit.core.domain.journal.enetity.FinRecord;
+import com.ukonnra.wonderland.whiterabbit.core.domain.journal.entity.Account;
+import com.ukonnra.wonderland.whiterabbit.core.domain.journal.entity.FinRecord;
 import com.ukonnra.wonderland.whiterabbit.core.domain.user.User;
 import com.ukonnra.wonderland.whiterabbit.core.infrastructure.AbstractAggregateRoot;
 import com.ukonnra.wonderland.whiterabbit.core.infrastructure.AbstractPresentationModel;
@@ -25,6 +25,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @ToString(callSuper = true)
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
+@SuppressWarnings("squid:S2160")
 public final class Journal extends AbstractAggregateRoot<Journal.PresentationModel, JournalEvent> {
   @Column(nullable = false)
   private String name;

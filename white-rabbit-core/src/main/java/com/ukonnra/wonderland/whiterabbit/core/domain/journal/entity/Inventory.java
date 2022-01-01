@@ -1,4 +1,4 @@
-package com.ukonnra.wonderland.whiterabbit.core.domain.journal.enetity;
+package com.ukonnra.wonderland.whiterabbit.core.domain.journal.entity;
 
 import com.ukonnra.wonderland.whiterabbit.core.infrastructure.AbstractEntity;
 import com.ukonnra.wonderland.whiterabbit.core.infrastructure.AbstractPresentationModel;
@@ -29,6 +29,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @EntityListeners(AuditingEntityListener.class)
 @Inheritance(strategy = InheritanceType.JOINED)
 @DiscriminatorColumn
+@SuppressWarnings("squid:S2160")
 // Cannot use sealed class, since JDK proxy need to inherit it too
 public abstract class Inventory extends AbstractEntity<Inventory.PresentationModel> {
   @OneToOne(fetch = FetchType.LAZY, optional = false)
@@ -42,6 +43,7 @@ public abstract class Inventory extends AbstractEntity<Inventory.PresentationMod
   @NoArgsConstructor
   @EntityListeners(AuditingEntityListener.class)
   @DiscriminatorValue("AVERAGE")
+  @SuppressWarnings("squid:S2160")
   public static final class Average extends Inventory {
     @OneToOne(
         cascade = CascadeType.ALL,
@@ -49,7 +51,7 @@ public abstract class Inventory extends AbstractEntity<Inventory.PresentationMod
         optional = false,
         mappedBy = "inventory",
         orphanRemoval = true)
-    private InventoryRecord record;
+    private InventoryRecord inventoryRecord;
 
     @Override
     public PresentationModel toPresentationModel() {
@@ -64,6 +66,7 @@ public abstract class Inventory extends AbstractEntity<Inventory.PresentationMod
   @NoArgsConstructor
   @EntityListeners(AuditingEntityListener.class)
   @DiscriminatorValue("FIFO")
+  @SuppressWarnings("squid:S2160")
   public static final class Fifo extends Inventory {
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "inventory", orphanRemoval = true)
     private Set<InventoryRecord> records = new HashSet<>();
@@ -76,7 +79,7 @@ public abstract class Inventory extends AbstractEntity<Inventory.PresentationMod
 
   public sealed interface PresentationModel extends AbstractPresentationModel
       permits PresentationModel.Fifo, PresentationModel.Average {
-    record Average(UUID id, UUID record) implements PresentationModel {}
+    record Average(UUID id, UUID inventoryRecord) implements PresentationModel {}
 
     record Fifo(UUID id, Set<UUID> records) implements PresentationModel {}
   }

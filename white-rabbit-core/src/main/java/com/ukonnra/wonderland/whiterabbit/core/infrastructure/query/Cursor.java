@@ -11,6 +11,10 @@ public abstract class Cursor {
   private static final Base64.Encoder ENCODER = Base64.getUrlEncoder();
   private static final Base64.Decoder DECODER = Base64.getUrlDecoder();
 
+  private Cursor() {
+    throw new IllegalStateException("Cursor is an utility class");
+  }
+
   /**
    * Extract ID from Cursor, right now Cursor is <code>base64(id)</code>
    *

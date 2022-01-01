@@ -11,8 +11,9 @@ import org.springframework.data.domain.DomainEvents;
 import org.springframework.util.Assert;
 
 @MappedSuperclass
-public abstract class AbstractAggregateRoot<PreT extends AbstractPresentationModel, E>
-    extends AbstractEntity<PreT> {
+@SuppressWarnings("squid:S2160")
+public abstract class AbstractAggregateRoot<P extends AbstractPresentationModel, E>
+    extends AbstractEntity<P> {
   private final transient @Transient List<E> domainEvents = new ArrayList<>();
 
   protected E registerEvent(E event) {

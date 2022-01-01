@@ -1,4 +1,4 @@
-package com.ukonnra.wonderland.whiterabbit.core.domain.journal.enetity;
+package com.ukonnra.wonderland.whiterabbit.core.domain.journal.entity;
 
 import com.ukonnra.wonderland.whiterabbit.core.domain.journal.Journal;
 import com.ukonnra.wonderland.whiterabbit.core.infrastructure.AbstractEntity;
@@ -22,6 +22,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @ToString(callSuper = true)
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
+@SuppressWarnings("squid:S2160")
 public final class Account extends AbstractEntity<Account.PresentationModel> {
   @Column(nullable = false)
   private Type type;

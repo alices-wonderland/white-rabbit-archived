@@ -21,6 +21,11 @@
       url: jdbc:postgresql://<database-host>:5432/white-rabbit?createDatabaseIfNotExist=true
       username: <database-username>
       password: <database-password>
+    security:
+      oauth2:
+        resourceserver:
+          jwt:
+            issuer-uri: <issuer-uri-from-oidc-provider>
     jpa:
       hibernate:
         ddl-auto: create

@@ -104,6 +104,8 @@ abstract class ConfigurationPluginBase : Plugin<Project> {
         property("sonar.projectKey", "alices-wonderland_white-rabbit")
         property("sonar.organization", "alices-wonderland")
         property("sonar.host.url", "https://sonarcloud.io")
+        property("sonar.java.coveragePlugin", "jacoco")
+        property("sonar.coverage.jacoco.xmlReportPaths", "${target.rootDir}/build/reports/jacoco/report.xml")
       }
     }
 

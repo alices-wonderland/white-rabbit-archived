@@ -1,4 +1,4 @@
-package com.ukonnra.wonderland.whiterabbit.core.domain.journal.enetity;
+package com.ukonnra.wonderland.whiterabbit.core.domain.journal.entity;
 
 import com.ukonnra.wonderland.whiterabbit.core.domain.journal.Journal;
 import com.ukonnra.wonderland.whiterabbit.core.domain.user.User;
@@ -28,6 +28,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @ToString(callSuper = true)
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
+@SuppressWarnings("squid:S2160")
 public final class FinRecord extends AbstractEntity<FinRecord.PresentationModel> {
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @ToString.Exclude
@@ -46,7 +47,7 @@ public final class FinRecord extends AbstractEntity<FinRecord.PresentationModel>
   @Column(nullable = false)
   private boolean isContingent = false;
 
-  @OneToMany(cascade = CascadeType.ALL, mappedBy = "record", orphanRemoval = true)
+  @OneToMany(cascade = CascadeType.ALL, mappedBy = "finRecord", orphanRemoval = true)
   @ToString.Exclude
   private Set<FinRecordItem> items = new HashSet<>();
 
