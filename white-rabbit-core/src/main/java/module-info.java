@@ -1,8 +1,8 @@
 module whiterabbit.core {
   exports com.ukonnra.wonderland.whiterabbit.core;
-  exports com.ukonnra.wonderland.whiterabbit.core.auth;
   exports com.ukonnra.wonderland.whiterabbit.core.domain.journal;
   exports com.ukonnra.wonderland.whiterabbit.core.domain.journal.entity;
+  exports com.ukonnra.wonderland.whiterabbit.core.domain.journal.valobj;
   exports com.ukonnra.wonderland.whiterabbit.core.domain.user;
   exports com.ukonnra.wonderland.whiterabbit.core.domain.user.valobj;
   exports com.ukonnra.wonderland.whiterabbit.core.infrastructure;
@@ -11,6 +11,7 @@ module whiterabbit.core {
   opens com.ukonnra.wonderland.whiterabbit.core;
   opens com.ukonnra.wonderland.whiterabbit.core.domain.journal;
   opens com.ukonnra.wonderland.whiterabbit.core.domain.journal.entity;
+  opens com.ukonnra.wonderland.whiterabbit.core.domain.journal.valobj;
   opens com.ukonnra.wonderland.whiterabbit.core.domain.user;
   opens com.ukonnra.wonderland.whiterabbit.core.domain.user.valobj;
   opens com.ukonnra.wonderland.whiterabbit.core.infrastructure;

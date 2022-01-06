@@ -20,5 +20,7 @@ public abstract class AbstractEntity<P extends AbstractPresentationModel>
     extends AbstractAuditable<User, UUID> {
   @Version private Long version;
 
+  private boolean deleted = false;
+
   public abstract P toPresentationModel();
 }

@@ -4,19 +4,15 @@ import com.ukonnra.wonderland.whiterabbit.core.domain.user.valobj.Identifier;
 import com.ukonnra.wonderland.whiterabbit.core.infrastructure.AbstractAggregateRoot;
 import com.ukonnra.wonderland.whiterabbit.core.infrastructure.AbstractPresentationModel;
 import com.ukonnra.wonderland.whiterabbit.core.infrastructure.CoreException;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EntityListeners;
-import javax.persistence.FetchType;
 import javax.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,9 +21,6 @@ import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.lang.Nullable;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 @Entity(name = "users")
@@ -45,9 +38,13 @@ public final class User extends AbstractAggregateRoot<User.PresentationModel, Us
   @Column(nullable = false)
   private Role role;
 
-  @ElementCollection(fetch = FetchType.EAGER)
+  @ElementCollection
   @CollectionTable(uniqueConstraints = @UniqueConstraint(columnNames = {"type", "value"}))
   private Set<Identifier> identifiers = new HashSet<>();
+
+  public void setIdentifiers(Set<Identifier> identifiers) {
+    this.identifiers = new HashSet<>(identifiers);
+  }
 
   @Override
   public PresentationModel toPresentationModel() {
@@ -55,65 +52,13 @@ public final class User extends AbstractAggregateRoot<User.PresentationModel, Us
   }
 
   public enum Role {
-    OWNER(null),
-    ADMIN(Role.OWNER),
-    USER(Role.ADMIN);
-
-    public final GrantedAuthority grantedAuthority;
-
-    @Nullable public final Role parent;
-
-    Role(@Nullable final Role parent) {
-      this.grantedAuthority = new SimpleGrantedAuthority("ROLE_" + this.name());
-      this.parent = parent;
-    }
+    OWNER,
+    ADMIN,
+    USER;
   }
 
   public record PresentationModel(UUID id, String name, Role role, Set<Identifier> identifiers)
-      implements AbstractPresentationModel, UserDetails {
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-      var roles =
-          switch (this.role) {
-            case OWNER -> Set.of(Role.values());
-            case ADMIN -> Set.of(Role.ADMIN, Role.USER);
-            case USER -> Set.of(Role.USER);
-          };
-
-      return roles.stream().map(r -> r.grantedAuthority).collect(Collectors.toSet());
-    }
-
-    @Override
-    public String getPassword() {
-      return null;
-    }
-
-    @Override
-    public String getUsername() {
-      return Optional.ofNullable(this.id).map(UUID::toString).orElse(null);
-    }
-
-    @Override
-    public boolean isAccountNonExpired() {
-      return false;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-      return false;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-      return false;
-    }
-
-    @Override
-    public boolean isEnabled() {
-      return true;
-    }
-  }
+      implements AbstractPresentationModel {}
 
   /**
    *
@@ -135,16 +80,16 @@ public final class User extends AbstractAggregateRoot<User.PresentationModel, Us
    *
    * @param operator
    */
-  public boolean isWriteable(@Nullable final User.PresentationModel operator) {
+  private boolean isWriteable(@Nullable final User operator) {
     if (operator == null) {
       return false;
     } else if (operator.role == Role.OWNER) {
       return true;
     } else if (operator.role == Role.ADMIN) {
       return this.getId() != null
-          && (Objects.equals(operator.id, this.getId()) || this.role == Role.USER);
+          && (Objects.equals(operator.getId(), this.getId()) || this.role == Role.USER);
     } else {
-      return this.getId() != null && Objects.equals(operator.id, this.getId());
+      return this.getId() != null && Objects.equals(operator.getId(), this.getId());
     }
   }
 
@@ -174,7 +119,7 @@ public final class User extends AbstractAggregateRoot<User.PresentationModel, Us
    * @param operator
    */
   public void create(
-      @Nullable final User.PresentationModel operator,
+      @Nullable final User operator,
       JwtAuthenticationToken jwt,
       final String name,
       final Role role,
@@ -228,16 +173,20 @@ public final class User extends AbstractAggregateRoot<User.PresentationModel, Us
    * @param role
    */
   public void update(
-      final User.PresentationModel operator,
+      final User operator,
       @Nullable final String name,
       @Nullable final Role role,
       @Nullable final Set<Identifier> identifiers) {
-    if (name == null && role == null && identifiers == null) {
-      throw new CoreException.EmptyUpdateOperation(this);
-    }
-
     if (!this.isWriteable(operator)) {
       throw new CoreException.OperatorNotWriteable(operator, this);
+    }
+
+    if (this.isDeleted()) {
+      throw new CoreException.NotFound(this);
+    }
+
+    if (name == null && role == null && identifiers == null) {
+      throw new CoreException.EmptyUpdateOperation(this);
     }
 
     if (name != null) {
@@ -258,5 +207,18 @@ public final class User extends AbstractAggregateRoot<User.PresentationModel, Us
       }
       this.identifiers = identifiers;
     }
+  }
+
+  public void delete(final User operator) {
+    if (!this.isWriteable(operator)) {
+      throw new CoreException.OperatorNotWriteable(operator, this);
+    }
+
+    if (this.isDeleted()) {
+      throw new CoreException.NotFound(this);
+    }
+
+    this.identifiers = new HashSet<>();
+    this.setDeleted(true);
   }
 }

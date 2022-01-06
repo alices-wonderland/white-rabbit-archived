@@ -14,7 +14,7 @@ import org.springframework.util.Assert;
 @SuppressWarnings("squid:S2160")
 public abstract class AbstractAggregateRoot<P extends AbstractPresentationModel, E>
     extends AbstractEntity<P> {
-  private final transient @Transient List<E> domainEvents = new ArrayList<>();
+  private transient @Transient List<E> domainEvents = new ArrayList<>();
 
   protected E registerEvent(E event) {
 

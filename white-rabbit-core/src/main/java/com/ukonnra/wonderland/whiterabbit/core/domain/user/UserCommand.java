@@ -19,4 +19,6 @@ public sealed interface UserCommand {
       @Nullable User.Role role,
       @Nullable Set<Identifier> identifiers)
       implements UserCommand {}
+
+  record Delete(UUID id) implements UserCommand {}
 }
